@@ -69,17 +69,17 @@ router.post('/', (req, res) => {
   })
   .then((product) => {
     if(req.body.tagIds.length) {
-      const productTagIdArr = req.body.tagIds.map((tag_id) => {
+      const prodTagId = req.body.tagIds.map((tag_id) => {
         return {
           product_id: product.id,
           tag_id,
         };
       });
-      return ProductTag.bulkCreate(productTagIdArr);
+      return ProductTag.bulkCreate(prodTagId);
     }
     res.status(200).json(product);
   })
-  .then((productTagIds) => res.status(200).json(productTagIds))
+  .then((data) => res.status(200).json(data))
   .catch((err) => {
     console.log(err);
     res.status(400).json(err);
@@ -87,35 +87,17 @@ router.post('/', (req, res) => {
 });
 
 router.put('/:id', (req, res) => {
-  // update a tag's name by its `id` value
   Product.update(req.body, {
     where: {
       id: req.params.id,
     },
-  })
-  .then((product) => {
-    return ProductTag.findAll({ where: { product_id: req.params.id} });
-  })
-  .then((productTags) => {
-    const productTagIds = productTags.map(({tag_id}) => tag_id);
-    const newProductTags = req.body.tagIds
-    .filter((tag_id) => !productTagIds.includes(tag_id))
-    .map((tag_id)=>{
-      return{
-        product_id: req.params.id,
-        tag_id,
-      };
-    });
-    const productTagsToRemove = productTags
-    .filter(({tag_id}) => !req.bpdy.tagIds.includes(tag_id))
-    .map(({id}) => id);
-
-    return Promise.all([
-      ProductTag.destroy({ where: { id: productTagsToRemove } }),
-      ProductTag.bulkCreate(newProductTags),
-    ]);
-  })
-  .then((updatedProductTags) => res.json(updatedProductTags))
+  }).then((data) => {
+    if (!data[0]) {
+      res.status(404).json({ message: 'No user with this id!' });
+      return;
+    }
+    res.status(200).json(data);
+  }).then((data) => res.status(200).json(data))
   .catch((err) => {
     console.log(err);
     res.status(400).json(err);
